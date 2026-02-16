@@ -16,10 +16,10 @@ class Layer:
             self.layer.append(p)
 
     def forward(self, x):
-        y = []
+        Y = []
         for i in self.layer:
-            y.append(i.forward(x))
-        return np.array(y)
+            Y.append(i.forward(x))
+        return np.array(Y)
 
 if __name__ == '__main__':
     lapisan1 = Layer(3, 10, activation_type='sigmoid')
