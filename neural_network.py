@@ -20,10 +20,18 @@ class NeuralNetwork:
 
         return current_input
 
+    def backprop(self, pred, target, n=0.1 ):
+        error = target - pred
+
+        for layer in reversed(self.layer):
+            error = layer.backward(error, n)
+
+
 if __name__ == '__main__':
-    model = NeuralNetwork([3, 10, 5, 1], activation_type='sigmoid')
+    model = NeuralNetwork([3, 10, 5, 2], activation_type='sigmoid')
 
     x = [1.5, 1.2, 1.1]
     predict = model.forward(x)
 
     print(predict)
+

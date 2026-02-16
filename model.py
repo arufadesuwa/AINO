@@ -21,6 +21,21 @@ class Layer:
             Y.append(i.forward(x))
         return np.array(Y)
 
+    def backward(self, error, n):
+
+        error_for_back = np.zeros(self.input_dim)
+
+        for i in range(len(self.layer)):
+            perceptron = self.layer[i]
+            perceptron_error = error[i]
+            D = perceptron_error*perceptron.get_derivative()
+
+            error_for_back += D * perceptron.w
+
+            perceptron.update_weight(D, n)
+
+        return error_for_back
+
 if __name__ == '__main__':
     lapisan1 = Layer(3, 10, activation_type='sigmoid')
     lapisan2 = Layer(10, 5, activation_type='sigmoid')
