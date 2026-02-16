@@ -3,9 +3,9 @@ import numpy as np
 e = 2.718
 
 class Perceptron:
-    def __init__(self, w=None, b=None, activation_type='relu'):
+    def __init__(self, dim, b=None, activation_type='relu'):
         self.last_z = None
-        self.w = w if w is not None else np.random.uniform(-1, 1)
+        self.w = np.random.uniform(-1, 1, size=dim)
         self.b = b if b is not None else np.random.uniform(-1, 1)
         self.activation_type = activation_type if activation_type is not None else 'relu'
 
@@ -33,15 +33,9 @@ class Perceptron:
         elif self.activation_type == 'tanh':
             return self.tanh(y)
         else:
-            print('cant found function activation, using relu for default')
             return self.relu(y)
 
+if __name__ == '__main__':
+    biji = Perceptron(3, activation_type='relu')
 
-biji = Perceptron(activation_type='sigmoid')
-
-print(biji.w, biji.b)
-
-print(biji.sigmoid(2))
-print(biji.tanh(2))
-
-print(biji.forward(2))
+    print(biji.w)
