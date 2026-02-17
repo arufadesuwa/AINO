@@ -1,5 +1,5 @@
 import numpy as np
-from neural_network import NeuralNetwork
+from aino.model import NeuralNetwork
 
 X_train = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 Y_train = np.array([[0], [1], [1], [0]])

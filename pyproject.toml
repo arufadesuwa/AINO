@@ -1,10 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "aino"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "AINO Is Neural Operation: A lightweight, educational neural network library."
+readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "ipykernel>=7.2.0",
-    "numpy>=2.4.2",
-    "scikit-learn>=1.8.0",
+license = {text = "MIT"}
+authors = [
+  {name = "Arufa", email = "radityaalfarisi6@gmail.com"}
 ]
+keywords = ["neural-network", "machine-learning", "perceptron", "educational", "numpy"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.21.0",
+    "pandas>=3.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "scikit-learn>=1.0",
+    "ipykernel>=6.0",
+    "matplotlib>=3.10.8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["aino"]

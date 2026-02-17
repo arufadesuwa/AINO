@@ -1,6 +1,6 @@
-from typing import List, Union, Optional, Any
+from typing import List, Union, Optional
 import numpy as np
-from model import Layer
+from .layer import Layer
 
 class NeuralNetwork:
     """

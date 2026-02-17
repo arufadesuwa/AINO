@@ -1,5 +1,5 @@
 import numpy as np
-from main import Perceptron
+from .perceptron import Perceptron
 from typing import List, Union, Optional
 
 class Layer:
