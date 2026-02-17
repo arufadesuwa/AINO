@@ -1,42 +1,65 @@
 import numpy as np
+from typing import Union, List, Optional
 
 e = 2.718
 
 class Perceptron:
-    def __init__(self, dim, b=None, activation_type='relu'):
-        self.last_z = None
-        self.w = np.random.uniform(-1, 1, size=dim)
-        self.b = b if b is not None else np.random.uniform(-1, 1)
-        self.activation_type = activation_type if activation_type is not None else 'relu'
+    """
+    A simple Perceptron model representing a single neuron in a neural network.
+    """
+
+    def __init__(self, dim: int, b: Optional[float] = None, activation_type: str = 'relu'):
+        """
+        Initializes the Perceptron.
+
+        Args:
+            dim (int): The number of input features (dimensionality).
+            b (float, optional): Initial bias. Defaults to a random value.
+            activation_type (str): The activation function ('relu', 'sigmoid', or 'tanh').
+        """
+        self.last_z: Optional[float] = None
+        self.last_x: Optional[np.ndarray] = None
+        self.w: np.ndarray = np.random.uniform(-1, 1, size=dim)
+        self.b: float = b if b is not None else np.random.uniform(-1, 1)
+        self.activation_type: str = activation_type
 
     @staticmethod
-    def sigmoid(x):
-        y = 1/(1+e**-x)
-        return y
+    def sigmoid(x: float) -> float:
+        """Calculates the Sigmoid activation function."""
+        return 1 / (1 + e ** -x)
 
     @staticmethod
-    def tanh(x):
-        y = (e**x-e**-x)/(e**x+e**-x)
-        return y
+    def tanh(x: float) -> float:
+        """Calculates the Hyperbolic Tangent activation function."""
+        return (e ** x - e ** -x) / (e ** x + e ** -x)
 
     @staticmethod
-    def relu(x):
-        y = max(0, x)
-        return y
+    def relu(x: float) -> float:
+        """Calculates the ReLU activation function."""
+        return max(0.0, x)
 
     @staticmethod
-    def sigmoid_derivative(y):
-        return y * (1-y)
+    def sigmoid_derivative(y: float) -> float:
+        """Calculates Sigmoid derivative given the output y."""
+        return y * (1.0 - y)
 
     @staticmethod
-    def tanh_derivative(y):
-        return 1 - (y**2)
+    def tanh_derivative(y: float) -> float:
+        """Calculates Tanh derivative given the output y."""
+        return 1.0 - (y ** 2)
 
     @staticmethod
-    def relu_derivative(z):
-        return 1 if z > 0 else 0
+    def relu_derivative(z: float) -> float:
+        """Calculates ReLU derivative given the logit z."""
+        return 1.0 if z > 0 else 0.0
 
-    def get_derivative(self):
+    def get_derivative(self) -> float:
+        """
+        Calculates the local gradient of the activation function.
+
+        Returns:
+            float: The derivative value at self.last_z.
+        """
         if self.activation_type == 'sigmoid':
             y = self.sigmoid(self.last_z)
             return self.sigmoid_derivative(y)
@@ -45,27 +68,44 @@ class Perceptron:
             return self.tanh_derivative(y)
         elif self.activation_type == 'relu':
             return self.relu_derivative(self.last_z)
-        return 1
+        return 1.0
 
-    def forward(self, x):
+    def forward(self, x: Union[np.ndarray, List[float]]) -> float:
+        """
+        Performs a forward pass.
+
+        Args:
+            x (Union[np.ndarray, List[float]]): Input feature vector.
+
+        Returns:
+            float: The activated output.
+        """
         self.last_x = np.array(x)
-        y = np.dot(self.w, x)
-        y += self.b
-        self.last_z = y.copy()
+        y = np.dot(self.w, self.last_x) + self.b
+        self.last_z = float(y)
+
         if self.activation_type == 'sigmoid':
-            return self.sigmoid(y)
+            return self.sigmoid(self.last_z)
         elif self.activation_type == 'tanh':
-            return self.tanh(y)
+            return self.tanh(self.last_z)
         else:
-            return self.relu(y)
+            return self.relu(self.last_z)
 
-    def update_weight(self, n, D):
+    def update_weight(self, n: float, D: float) -> np.ndarray:
+        """
+        Updates weights and bias using the delta rule.
 
-        self.w += n * D *self.last_x
-        self.b += n*D
-        return D*self.w
+        Args:
+            n (float): Learning rate (often denoted as $\eta$).
+            D (float): The error gradient/delta value.
+
+        Returns:
+            np.ndarray: The weighted error to be passed to the previous layer.
+        """
+        self.w += n * D * self.last_x
+        self.b += n * D
+        return D * self.w
 
 if __name__ == '__main__':
-    biji = Perceptron(3, activation_type='relu')
-
-    print(biji.w)
+    # Perceptron.get
+    pass
