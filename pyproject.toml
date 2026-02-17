@@ -20,7 +20,6 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.21.0",
-    "pandas>=3.0.0",
 ]
 
 [dependency-groups]
@@ -29,6 +28,7 @@ dev = [
     "scikit-learn>=1.0",
     "ipykernel>=6.0",
     "matplotlib>=3.10.8",
+    "pandas>=3.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
