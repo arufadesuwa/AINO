@@ -57,5 +57,5 @@ model.save('aino.dit')
 
 ```
 
-Built with ❤️ and use Python and Numpy.
+Built with ❤️ use Python and Numpy.
 
