@@ -1,5 +1,5 @@
 # AINO (Aino is Neural Operation)
-![AINO Banner](assets/aino.webp)
+![AINO Banner](https://raw.githubusercontent.com/arufadesuwa/AINO/f933ba6c0186b904ef871e4b118621878d97a07a/assets/aino.webp)
 
 > **"Aino is Neural Operation."** > A custom-built Deep Learning framework built from scratch using pure Python and NumPy.
 
