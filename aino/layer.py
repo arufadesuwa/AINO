@@ -1,82 +1,50 @@
 import numpy as np
-from .perceptron import Perceptron
-from typing import List, Union, Optional
+from typing import Optional
+from . import activations
+
 
 class Layer:
     """
-    Represents a single layer in a multi-layer perceptron (MLP).
+    Represents a single layer in a multi-layer perceptron (MLP) using Vectorization.
 
-    A layer consists of a collection of Perceptron objects that all receive
-    the same input vector and produce a combined output vector.
+    Computes transformations using a weight matrix and a bias vector
+    for highly optimized parallel computation.
     """
 
     def __init__(self, input_dim: int, amount: Optional[int] = None, activation_type: str = 'relu'):
-        """
-        Initializes the Layer and populates it with Perceptrons.
-
-        Args:
-            input_dim (int): The number of inputs each perceptron receives.
-            amount (int, optional): Number of neurons in this layer. Defaults to 10.
-            activation_type (str): The activation function to use for all neurons in the layer.
-        """
         self.activation_type: str = activation_type if activation_type is not None else 'relu'
         self.amount: int = amount if amount is not None else 10
-        self.layer: List[Perceptron] = []
-        self.input_dim: int = input_dim
+        limit = np.sqrt(6 / (input_dim + self.amount))
+        self.w = np.random.uniform(-limit, limit, size=(input_dim, self.amount)).astype(np.float32)
+        self.b = np.zeros((1, self.amount), dtype=np.float32)
+        self.last_x: Optional[np.ndarray] = None
+        self.last_z: Optional[np.ndarray] = None
+        self.dW: Optional[np.ndarray] = None
+        self.db: Optional[np.ndarray] = None
 
-        # Initialize the neurons
-        self.add_perceptron(self.amount)
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        self.last_x = x
+        self.last_z = np.dot(x, self.w) + self.b
 
-    def add_perceptron(self, amount: int) -> None:
-        """
-        Instantiates and adds Perceptron units to the layer.
+        if self.activation_type == 'sigmoid':
+            return activations.sigmoid(self.last_z)
+        elif self.activation_type == 'tanh':
+            return activations.tanh(self.last_z)
+        else:
+            return activations.relu(self.last_z)
 
-        Args:
-            amount (int): The number of Perceptrons to create and add.
-        """
-        for _ in range(amount):
-            p = Perceptron(dim=self.input_dim, activation_type=self.activation_type)
-            self.layer.append(p)
+    def backward(self, error: np.ndarray) -> np.ndarray:
+        m = self.last_x.shape[0]
 
-    def forward(self, x: Union[np.ndarray, List[float]]) -> np.ndarray:
-        """
-        Passes the input through every perceptron in the layer.
+        dZ = error * activations.get_derivative(self.activation_type, self.last_z)
+        error_for_back = np.dot(dZ, self.w.T)
 
-        Args:
-            x (Union[np.ndarray, List[float]]): The input vector from the previous layer or data.
-
-        Returns:
-            np.ndarray: A vector of activated outputs, one from each neuron.
-        """
-        Y = []
-        for perceptron in self.layer:
-            Y.append(perceptron.forward(x))
-        return np.array(Y)
-
-    def backward(self, error: np.ndarray, n: float) -> np.ndarray:
-        """
-        Performs backpropagation for the layer.
-
-        Calculates the error gradient for each neuron, updates their weights,
-        and aggregates the error to be passed to the preceding layer.
-
-        Args:
-            error (np.ndarray): The error vector from the subsequent layer (gradient of loss).
-            n (float): The learning rate.
-
-        Returns:
-            np.ndarray: The accumulated error vector for the previous layer.
-        """
-        error_for_back = np.zeros(self.input_dim)
-
-        for i in range(len(self.layer)):
-            perceptron = self.layer[i]
-            perceptron_error = error[i]
-
-            D = perceptron_error * perceptron.get_derivative()
-
-            error_for_back += D * perceptron.w
-
-            perceptron.update_weight(n, D)
+        self.dW = np.dot(self.last_x.T, dZ) / m
+        self.db = np.sum(dZ, axis=0, keepdims=True) / m
 
         return error_for_back
+
+    def update(self, n: float) -> None:
+        """Updates weights and biases using the calculated gradients."""
+        self.w -= (n * self.dW)
+        self.b -= (n * self.db)

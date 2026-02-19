@@ -19,16 +19,20 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "numpy>=1.21.0",
+    "numpy",
+    "streamlit",
+    "altair",
+    "streamlit-drawable-canvas",
+    "opencv-python",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=7.0",
-    "scikit-learn>=1.0",
-    "ipykernel>=6.0",
-    "matplotlib>=3.10.8",
-    "pandas>=3.0.0",
+    "scikit-learn",
+    "ipykernel",
+    "matplotlib",
+    "pandas",
 ]
 
 [tool.hatch.build.targets.wheel]
