@@ -20,11 +20,10 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "streamlit",
-    "altair",
-    "streamlit-drawable-canvas",
-    "opencv-python",
 ]
+
+[project.optional-dependencies]
+gpu = ["cupy-cuda12x"] # Bisa disesuaikan dengan versi CUDA standar
 
 [dependency-groups]
 dev = [
@@ -33,6 +32,10 @@ dev = [
     "ipykernel",
     "matplotlib",
     "pandas",
+    "streamlit",
+    "altair",
+    "streamlit-drawable-canvas",
+    "opencv-python",
 ]
 
 [tool.hatch.build.targets.wheel]

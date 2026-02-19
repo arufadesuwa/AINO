@@ -1,10 +1,27 @@
-import numpy as np
-from typing import List, Optional, Any
+from .backend import xp
+from typing import List, Optional
 from .layer import Layer
 
 
 class NeuralNetwork:
+    """
+    A Multi-Layer Perceptron (MLP) Neural Network capable of running on CPU (NumPy)
+    or GPU (CuPy) dynamically.
+
+    Supports mini-batch gradient descent and universal model saving/loading.
+    """
+
     def __init__(self, layer_config: List[int], activation_type: str = 'relu'):
+        """
+        Initializes the neural network architecture.
+
+        Args:
+            layer_config (List[int]): A list defining the number of neurons in each layer.
+                                      For example, [784, 128, 10] creates a network with
+                                      784 inputs, 128 hidden neurons, and 10 outputs.
+            activation_type (str): The activation function to use for the hidden layers
+                                   ('relu', 'sigmoid', 'tanh'). Defaults to 'relu'.
+        """
         self.config: List[int] = layer_config
         self.activation_type: str = activation_type if activation_type is not None else 'relu'
         self.layers: List[Layer] = []
@@ -16,37 +33,77 @@ class NeuralNetwork:
             new_layer = Layer(i_dim, neuron_count, activation_type=self.activation_type)
             self.layers.append(new_layer)
 
-    def _forward(self, x: np.ndarray) -> np.ndarray:
+    def _forward(self, x: xp.ndarray) -> xp.ndarray:
+        """
+        Performs a forward pass through all layers of the network.
+
+        Args:
+            x (xp.ndarray): The input data matrix.
+
+        Returns:
+            xp.ndarray: The output predictions from the final layer.
+        """
         current_input = x
         for layer in self.layers:
             current_input = layer.forward(current_input)
         return current_input
 
-    def _backprop(self, pred: np.ndarray, target: np.ndarray, n: float = 0.1) -> None:
+    def _backprop(self, pred: xp.ndarray, target: xp.ndarray, n: float = 0.1) -> None:
+        """
+        Performs backpropagation to calculate gradients and update weights.
+
+        Args:
+            pred (xp.ndarray): The predicted output from the forward pass.
+            target (xp.ndarray): The actual ground truth values.
+            n (float): The learning rate. Defaults to 0.1.
+        """
         error = pred - target
         for layer in reversed(self.layers):
             error = layer.backward(error)
             layer.update(n)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        X = np.atleast_2d(X)
+    def predict(self, X: xp.ndarray) -> xp.ndarray:
+        """
+        Predicts the output for the given input data.
+
+        Args:
+            X (xp.ndarray): The input data matrix.
+
+        Returns:
+            xp.ndarray: The predicted outputs.
+        """
+        X = xp.atleast_2d(X)
         return self._forward(X)
 
-    def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 1000, n: float = 0.1, batch_size: int = 32,
-            verbose: bool = False) -> None:
-        X = np.ascontiguousarray(X, dtype=np.float32)
-        y = np.ascontiguousarray(y, dtype=np.float32)
+    def fit(self, X: xp.ndarray, y: xp.ndarray, epochs: int = 1000, n: float = 0.1,
+            batch_size: int = 32, verbose: bool = False) -> None:
+        """
+        Trains the neural network using Mini-Batch Gradient Descent.
+
+        Automatically ensures the input matrices are contiguous in memory and
+        transferred to the appropriate device (CPU or GPU) for optimal speed.
+
+        Args:
+            X (xp.ndarray): The training input data.
+            y (xp.ndarray): The target labels.
+            epochs (int): The number of complete passes through the training dataset. Defaults to 1000.
+            n (float): The learning rate for weight updates. Defaults to 0.1.
+            batch_size (int): The number of samples per gradient update. Defaults to 32.
+            verbose (bool): If True, prints the average loss periodically. Defaults to False.
+        """
+        X = xp.ascontiguousarray(xp.asarray(X, dtype=xp.float32))
+        y = xp.ascontiguousarray(xp.asarray(y, dtype=xp.float32))
+
         n_samples = len(X)
         n_outputs = y.shape[1]
 
         print(f"Start training AINO model (Mini-Batch) over {epochs} epochs...")
         print(f"Batch Size: {batch_size} | Samples: {n_samples}")
 
-        # 2. Siapkan array indeks untuk shuffling yang efisien
-        indices = np.arange(n_samples)
+        indices = xp.arange(n_samples)
 
         for epoch in range(epochs):
-            np.random.shuffle(indices)
+            xp.random.shuffle(indices)
 
             total_error = 0.0
 
@@ -57,7 +114,7 @@ class NeuralNetwork:
 
                 pred = self._forward(X_batch)
 
-                total_error += np.sum((y_batch - pred) ** 2)
+                total_error += xp.sum((y_batch - pred) ** 2)
 
                 self._backprop(pred, y_batch, n)
 
@@ -68,6 +125,18 @@ class NeuralNetwork:
         print("Training is done!")
 
     def save(self, filename: str = "model.dit") -> None:
+        """
+        Saves the network's architecture and trained weights to a file.
+
+        Safely pulls data from GPU to CPU before saving to ensure the resulting
+        file is universally loadable regardless of the target machine's hardware.
+
+        Args:
+            filename (str): The name of the file to save. Defaults to "model.dit".
+        """
+        import numpy as np
+        from .backend import to_cpu
+
         if not filename.endswith(".dit"):
             filename += ".dit"
 
@@ -76,23 +145,34 @@ class NeuralNetwork:
             'activation': np.array(self.activation_type)
         }
 
+        # Safely extract weights and biases back to CPU memory
         for i, layer in enumerate(self.layers):
-            data[f"layer_{i}_w"] = layer.w
-            data[f"layer_{i}_b"] = layer.b
+            data[f"layer_{i}_w"] = to_cpu(layer.w)
+            data[f"layer_{i}_b"] = to_cpu(layer.b)
 
         with open(filename, 'wb') as f:
             np.savez(f, **data)
 
-        print(f"Successfully saved model to '{filename}'")
+        print(f"Successfully saved universal model to '{filename}'")
 
     @staticmethod
     def load(filename: str) -> Optional['NeuralNetwork']:
+        """
+        Loads a trained neural network model from a .dit file.
+
+        Args:
+            filename (str): The path to the saved model file.
+
+        Returns:
+            Optional[NeuralNetwork]: The instantiated NeuralNetwork with loaded weights,
+                                     or None if the loading process fails.
+        """
         if not filename.endswith(".dit"):
             print(f"Warning: '{filename}' isn't a .dit model...")
 
         try:
             with open(filename, 'rb') as f:
-                data = np.load(f, allow_pickle=True)
+                data = xp.load(f, allow_pickle=True)
                 config = data['config'].tolist()
                 activation = str(data['activation'])
 
