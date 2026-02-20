@@ -84,19 +84,10 @@ class NeuralNetwork:
             batch_size: int = 32, verbose: bool = False, loss_type: str = 'cross_entropy') -> None:
         """
         Trains the neural network using Mini-Batch Gradient Descent.
-
-        Automatically ensures the input matrices are contiguous in memory and
-        transferred to the appropriate device (CPU or GPU) for optimal speed.
-
-        Args:
-            X (xp.ndarray): The training input data.
-            y (xp.ndarray): The target labels.
-            epochs (int): The number of complete passes through the training dataset. Defaults to 1000.
-            n (float): The learning rate for weight updates. Defaults to 0.1.
-            batch_size (int): The number of samples per gradient update. Defaults to 32.
-            verbose (bool): If True, prints the average loss periodically. Defaults to False.
-            loss_type (str): The loss function to use ('mse' or 'cross_entropy'). Defaults to 'cross_entropy'.
         """
+        if hasattr(xp, 'cuda'):
+            xp.cuda.Device(0).use()
+
         X = xp.ascontiguousarray(xp.asarray(X, dtype=xp.float32))
         y = xp.ascontiguousarray(xp.asarray(y, dtype=xp.float32))
 
@@ -113,7 +104,7 @@ class NeuralNetwork:
         for epoch in range(epochs):
             xp.random.shuffle(indices)
 
-            total_error = xp.zeros(1, dtype=xp.float32)
+            total_error = 0.0
 
             for i in range(0, n_samples, batch_size):
                 idx_batch = indices[i: i + batch_size]
@@ -134,21 +125,16 @@ class NeuralNetwork:
                 else:
                     raise ValueError(f"Unknown loss_type: '{loss_type}'.")
 
-                total_error += batch_loss
-
                 self._backprop(error_grad, n)
 
-                del X_batch, y_batch, pred, batch_loss, error_grad
-
-            if hasattr(xp, 'cuda'):
-                xp.cuda.Stream.null.synchronize()
+                if hasattr(batch_loss, 'get'):
+                    total_error += float(batch_loss.get())
+                else:
+                    total_error += float(batch_loss)
 
             if verbose and (epoch % (max(1, epochs // 10)) == 0):
-                avg_loss = float(total_error[0]) / num_batches
+                avg_loss = total_error / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
-
-            if hasattr(xp, 'get_default_memory_pool'):
-                xp.get_default_memory_pool().free_all_blocks()
 
         print("Training is done!")
 
