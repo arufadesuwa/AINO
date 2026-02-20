@@ -136,6 +136,9 @@ class NeuralNetwork:
                 avg_loss = total_error / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
 
+            if hasattr(xp, 'get_default_memory_pool'):
+                xp.get_default_memory_pool().free_all_blocks()
+
         print("Training is done!")
 
     def save(self, filename: str = "model.dit") -> None:

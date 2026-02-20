@@ -20,8 +20,8 @@ def softmax(x: xp.ndarray) -> xp.ndarray:
     Converts raw logits into probabilities that sum to 1.
     """
     shifted_x = x - xp.max(x, axis=1, keepdims=True)
-    exp_x = xp.exp(shifted_x)
-    return exp_x / xp.sum(exp_x, axis=1, keepdims=True)
+    exps = xp.exp(shifted_x)
+    return exps / xp.sum(exps, axis=1, keepdims=True)
 
 def sigmoid_derivative(y: xp.ndarray) -> xp.ndarray:
     """Calculates Sigmoid derivative given the output y."""
