@@ -113,7 +113,7 @@ class NeuralNetwork:
         for epoch in range(epochs):
             xp.random.shuffle(indices)
 
-            total_error = 0.0
+            total_error = xp.zeros(1, dtype=xp.float32)
 
             for i in range(0, n_samples, batch_size):
                 idx_batch = indices[i: i + batch_size]
@@ -134,17 +134,17 @@ class NeuralNetwork:
                 else:
                     raise ValueError(f"Unknown loss_type: '{loss_type}'.")
 
-                total_error += float(batch_loss)
+                total_error += batch_loss
 
                 self._backprop(error_grad, n)
 
                 del X_batch, y_batch, pred, batch_loss, error_grad
 
-                if hasattr(xp, 'cuda'):
-                    xp.cuda.Stream.null.synchronize()
+            if hasattr(xp, 'cuda'):
+                xp.cuda.Stream.null.synchronize()
 
             if verbose and (epoch % (max(1, epochs // 10)) == 0):
-                avg_loss = total_error / num_batches
+                avg_loss = float(total_error[0]) / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
 
             if hasattr(xp, 'get_default_memory_pool'):
