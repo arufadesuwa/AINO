@@ -126,7 +126,6 @@ class NeuralNetwork:
                     batch_loss = xp.sum((y_batch - pred) ** 2) / batch_size
                     error_grad = pred - y_batch
 
-
                 elif loss_type == 'cross_entropy':
                     epsilon = xp.float32(1e-7)
                     batch_loss = -xp.sum(y_batch * xp.log(pred + epsilon)) / batch_size
@@ -142,6 +141,9 @@ class NeuralNetwork:
             if verbose and (epoch % (max(1, epochs // 10)) == 0):
                 avg_loss = total_error / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
+
+            if hasattr(xp, 'get_default_memory_pool'):
+                xp.get_default_memory_pool().free_all_blocks()
 
         print("Training is done!")
 
