@@ -11,8 +11,8 @@ def tanh(x: xp.ndarray) -> xp.ndarray:
 
 
 def relu(x: xp.ndarray) -> xp.ndarray:
-    """Calculates the ReLU activation function."""
-    return xp.maximum(0.0, x)
+    """Calculates the ReLU activation function (Strict FP32)."""
+    return xp.maximum(xp.float32(0.0), x)
 
 def softmax(x: xp.ndarray) -> xp.ndarray:
     """
@@ -32,10 +32,9 @@ def tanh_derivative(y: xp.ndarray) -> xp.ndarray:
     """Calculates Tanh derivative given the output y."""
     return 1.0 - (y ** 2)
 
-
 def relu_derivative(z: xp.ndarray) -> xp.ndarray:
-    """Calculates ReLU derivative given the logit z."""
-    return xp.where(z > 0.0, 1.0, 0.0)
+    """Calculates ReLU derivative using astype for maximum GPU speed."""
+    return (z > 0).astype(xp.float32)
 
 
 def softmax_derivative(z: xp.ndarray) -> xp.ndarray:
