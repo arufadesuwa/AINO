@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aino"
-version = "1.0.2"
+version = "2.1.0"
 description = "AINO Is Neural Operation: A lightweight, educational neural network library."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,3 +40,8 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["aino"]
+
+[project.urls]
+Homepage = "https://github.com/arufadesuwa/AINO"
+Repository = "https://github.com/arufadesuwa/AINO.git"
+"Bug Tracker" = "https://github.com/arufadesuwa/AINO/issues"

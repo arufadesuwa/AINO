@@ -14,6 +14,14 @@ def relu(x: xp.ndarray) -> xp.ndarray:
     """Calculates the ReLU activation function."""
     return xp.maximum(0.0, x)
 
+def softmax(x: xp.ndarray) -> xp.ndarray:
+    """
+    Calculates the Softmax activation function.
+    Converts raw logits into probabilities that sum to 1.
+    """
+    shifted_x = x - xp.max(x, axis=1, keepdims=True)
+    exp_x = xp.exp(shifted_x)
+    return exp_x / xp.sum(exp_x, axis=1, keepdims=True)
 
 def sigmoid_derivative(y: xp.ndarray) -> xp.ndarray:
     """Calculates Sigmoid derivative given the output y."""
@@ -30,6 +38,17 @@ def relu_derivative(z: xp.ndarray) -> xp.ndarray:
     return xp.where(z > 0.0, 1.0, 0.0)
 
 
+def softmax_derivative(z: xp.ndarray) -> xp.ndarray:
+    """
+    Calculates Softmax derivative.
+
+    NOTE: In practice, Softmax is almost always paired with Categorical Cross-Entropy loss.
+    The mathematical derivative of that pair neatly cancels out to (pred - target).
+    Since we compute (pred - target) directly in the network's backprop start,
+    this local derivative simply returns an array of 1s to pass the gradient through unchanged.
+    """
+    return xp.ones_like(z)
+
 def get_derivative(activation_type: str, z: xp.ndarray) -> xp.ndarray:
     """Routes the derivative calculation based on activation type."""
     if activation_type == 'sigmoid':
@@ -40,5 +59,7 @@ def get_derivative(activation_type: str, z: xp.ndarray) -> xp.ndarray:
         return tanh_derivative(y)
     elif activation_type == 'relu':
         return relu_derivative(z)
+    elif activation_type == 'softmax':
+        return softmax_derivative(z)
 
     return xp.ones_like(z)

@@ -11,7 +11,7 @@ class NeuralNetwork:
     Supports mini-batch gradient descent and universal model saving/loading.
     """
 
-    def __init__(self, layer_config: List[int], activation_type: str = 'relu'):
+    def __init__(self, layer_config: List[int], activation_type: str = 'relu', output_activation: str = 'softmax'):
         """
         Initializes the neural network architecture.
 
@@ -24,13 +24,18 @@ class NeuralNetwork:
         """
         self.config: List[int] = layer_config
         self.activation_type: str = activation_type if activation_type is not None else 'relu'
+        self.output_activation: str = output_activation
         self.layers: List[Layer] = []
 
         for i in range(len(layer_config) - 1):
             i_dim = layer_config[i]
             neuron_count = layer_config[i + 1]
 
-            new_layer = Layer(i_dim, neuron_count, activation_type=self.activation_type)
+            if i == len(layer_config) - 2:
+                new_layer = Layer(i_dim, neuron_count, activation_type=self.output_activation)
+            else:
+                new_layer = Layer(i_dim, neuron_count, activation_type=self.activation_type)
+
             self.layers.append(new_layer)
 
     def _forward(self, x: xp.ndarray) -> xp.ndarray:
@@ -48,16 +53,16 @@ class NeuralNetwork:
             current_input = layer.forward(current_input)
         return current_input
 
-    def _backprop(self, pred: xp.ndarray, target: xp.ndarray, n: float = 0.1) -> None:
+    def _backprop(self, error_gradient: xp.ndarray, n: float = 0.1) -> None:
         """
-        Performs backpropagation to calculate gradients and update weights.
+        Performs backpropagation using a pre-calculated error gradient.
 
         Args:
-            pred (xp.ndarray): The predicted output from the forward pass.
-            target (xp.ndarray): The actual ground truth values.
+            error_gradient (xp.ndarray): The initial gradient of the loss with respect to the output.
             n (float): The learning rate. Defaults to 0.1.
         """
-        error = pred - target
+        error = error_gradient
+
         for layer in reversed(self.layers):
             error = layer.backward(error)
             layer.update(n)
@@ -76,7 +81,7 @@ class NeuralNetwork:
         return self._forward(X)
 
     def fit(self, X: xp.ndarray, y: xp.ndarray, epochs: int = 1000, n: float = 0.1,
-            batch_size: int = 32, verbose: bool = False) -> None:
+            batch_size: int = 32, verbose: bool = False, loss_type: str = 'cross_entropy') -> None:
         """
         Trains the neural network using Mini-Batch Gradient Descent.
 
@@ -90,6 +95,7 @@ class NeuralNetwork:
             n (float): The learning rate for weight updates. Defaults to 0.1.
             batch_size (int): The number of samples per gradient update. Defaults to 32.
             verbose (bool): If True, prints the average loss periodically. Defaults to False.
+            loss_type (str): The loss function to use ('mse' or 'cross_entropy'). Defaults to 'cross_entropy'.
         """
         X = xp.ascontiguousarray(xp.asarray(X, dtype=xp.float32))
         y = xp.ascontiguousarray(xp.asarray(y, dtype=xp.float32))
@@ -97,8 +103,10 @@ class NeuralNetwork:
         n_samples = len(X)
         n_outputs = y.shape[1]
 
+        num_batches = int(xp.ceil(n_samples / batch_size))
+
         print(f"Start training AINO model (Mini-Batch) over {epochs} epochs...")
-        print(f"Batch Size: {batch_size} | Samples: {n_samples}")
+        print(f"Batch Size: {batch_size} | Samples: {n_samples} | Loss Function: {loss_type.upper()}")
 
         indices = xp.arange(n_samples)
 
@@ -114,12 +122,23 @@ class NeuralNetwork:
 
                 pred = self._forward(X_batch)
 
-                total_error += xp.sum((y_batch - pred) ** 2)
+                if loss_type == 'mse':
+                    batch_loss = xp.sum((y_batch - pred) ** 2) / batch_size
+                    error_grad = pred - y_batch
 
-                self._backprop(pred, y_batch, n)
+                elif loss_type == 'cross_entropy':
+                    epsilon = 1e-9
+                    batch_loss = -xp.sum(y_batch * xp.log(pred + epsilon)) / batch_size
+                    error_grad = pred - y_batch
+
+                else:
+                    raise ValueError(f"Unknown loss_type: '{loss_type}'. Please use 'mse' or 'cross_entropy'.")
+
+                total_error += batch_loss
+                self._backprop(error_grad, n)
 
             if verbose and (epoch % (max(1, epochs // 10)) == 0):
-                avg_loss = total_error / (n_samples * n_outputs)
+                avg_loss = total_error / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
 
         print("Training is done!")
@@ -142,7 +161,8 @@ class NeuralNetwork:
 
         data = {
             'config': np.array(self.config),
-            'activation': np.array(self.activation_type)
+            'activation': np.array(self.activation_type),
+            'output_activation': np.array(self.output_activation)  # Tambahan baru
         }
 
         # Safely extract weights and biases back to CPU memory
@@ -176,15 +196,18 @@ class NeuralNetwork:
                 config = data['config'].tolist()
                 activation = str(data['activation'])
 
-                print(f"Architecture: {config}, Non-linearity: {activation}")
-                model_baru = NeuralNetwork(config, activation_type=activation)
+                out_activation = str(data['output_activation']) if 'output_activation' in data else 'softmax'
 
-                for i, layer in enumerate(model_baru.layers):
+                print(f"Architecture: {config}, Hidden: {activation}, Output: {out_activation}")
+
+                new_model = NeuralNetwork(config, activation_type=activation, output_activation=out_activation)
+
+                for i, layer in enumerate(new_model.layers):
                     layer.w = data[f"layer_{i}_w"]
                     layer.b = data[f"layer_{i}_b"]
 
                 print("AINO model ready")
-                return model_baru
+                return new_model
 
         except Exception as e:
             print(f"Error when trying to load model: {e}")
