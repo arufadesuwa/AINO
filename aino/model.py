@@ -138,6 +138,11 @@ class NeuralNetwork:
 
                 self._backprop(error_grad, n)
 
+                del X_batch, y_batch, pred, batch_loss, error_grad
+
+                if hasattr(xp, 'cuda'):
+                    xp.cuda.Stream.null.synchronize()
+
             if verbose and (epoch % (max(1, epochs // 10)) == 0):
                 avg_loss = total_error / num_batches
                 print(f"Epoch {epoch}, Loss: {avg_loss:.6f}")
